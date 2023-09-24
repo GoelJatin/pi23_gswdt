@@ -16,14 +16,20 @@ plugins = ["django_coverage_plugin"]
 
 # ==== black ====
 [tool.black]
-line-length = 119
+line-length = 120
 target-version = ['py311']
-
+exclude = """
+/(
+  | migrations
+  | venv
+)/
+"""
 
 # ==== isort ====
 [tool.isort]
 profile = "black"
-line_length = 119
+atomic = true
+line_length = 120
 known_first_party = [
     "pi23_gswdt",
     "config",
@@ -63,7 +69,7 @@ load-plugins = [
 django-settings-module = "config.settings.local"
 
 [tool.pylint.FORMAT]
-max-line-length = 119
+max-line-length = 120
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
@@ -95,7 +101,7 @@ format_js = true
 ignore = "H006,H030,H031,T002"
 include = "H017,H035"
 indent = 2
-max_line_length = 119
+max_line_length = 120
 profile = "django"
 
 [tool.djlint.css]
