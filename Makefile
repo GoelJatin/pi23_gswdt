@@ -74,7 +74,7 @@ python-makemigrations-merge:
 merge: python-makemigrations-merge
 
 python-migrate:
-	docker-compose -f local.yml run --rm django python manage.py migrate_schemas --executor=standard_soft_delete
+	docker-compose -f local.yml run --rm django python manage.py migrate
 m: python-migrate
 
 
