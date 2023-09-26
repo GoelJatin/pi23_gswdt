@@ -4,6 +4,7 @@ Base settings to build other settings files upon.
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 # pi23_gswdt/
@@ -81,6 +82,7 @@ THIRD_PARTY_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "drf_spectacular",
+    "django_celery_results",
 ]
 
 LOCAL_APPS = [
@@ -268,7 +270,7 @@ if USE_TZ:
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-broker_url
 CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-result_backend
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_RESULT_BACKEND = "django-db"
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#result-extended
 CELERY_RESULT_EXTENDED = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#result-backend-always-retry
@@ -337,3 +339,26 @@ SPECTACULAR_SETTINGS = {
 }
 # Your stuff...
 # ------------------------------------------------------------------------------
+REDIS_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/0")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient", "PICKLE_VERSION": 5},
+        "IGNORE_EXCEPTIONS": True,
+        "TIMEOUT": 3600,
+    },
+}
+
+CELERY_CACHE_BACKEND = "default"
+CELERY_BEAT_SCHEDULE = {
+    "task__test_celery": {
+        "task": "task__test_celery",
+        "args": (1, 2, 3),
+        "kwargs": {"a": 1, "b": 2, "c": 3},
+        "schedule": crontab(
+            **{"minute": "*/3", "hour": "*", "day_of_week": "*", "day_of_month": "*", "month_of_year": "*"}
+        ),
+    },
+}
