@@ -26,7 +26,7 @@ drf-spectacular==0.26.5  # https://github.com/tfranzel/drf-spectacular
 django-celery-results==2.5.1  # https://github.com/celery/django-celery-results
 django-redis-task-lock==0.6  # https://github.com/Lenders-Cooperative/django-redis-task-lock
 
-django-constance==2.9.1  # https://github.com/jazzband/django-constance
+django-constance==3.1.0  # https://github.com/jazzband/django-constance
 django-constance[database]
 django-tenants==3.5.0  # https://github.com/django-tenants/django-tenants
 tenant-schemas-celery==2.0.0  # https://github.com/maciej-gol/tenant-schemas-celery
