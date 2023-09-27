@@ -46,52 +46,20 @@ LOCALE_PATHS = [str(BASE_DIR / "locale")]
 # DATABASES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
-DATABASES = {"default": env.db("DATABASE_URL")}
-DATABASES["default"]["ATOMIC_REQUESTS"] = True
+DEFAULT_DB = "default"
+
+DATABASES = {DEFAULT_DB: env.db("DATABASE_URL")}
+DATABASES[DEFAULT_DB]["ATOMIC_REQUESTS"] = True
+DATABASES[DEFAULT_DB]["ENGINE"] = "django_tenants.postgresql_backend"
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # URLS
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#root-urlconf
-ROOT_URLCONF = "config.urls"
+ROOT_URLCONF = ""
 # https://docs.djangoproject.com/en/dev/ref/settings/#wsgi-application
 WSGI_APPLICATION = "config.wsgi.application"
-
-# APPS
-# ------------------------------------------------------------------------------
-DJANGO_APPS = [
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.sites",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    # "django.contrib.humanize", # Handy template tags
-    "django.contrib.admin",
-    "django.forms",
-]
-THIRD_PARTY_APPS = [
-    "crispy_forms",
-    "crispy_bootstrap5",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
-    "django_celery_beat",
-    "rest_framework",
-    "rest_framework.authtoken",
-    "corsheaders",
-    "drf_spectacular",
-    "django_celery_results",
-]
-
-LOCAL_APPS = [
-    "pi23_gswdt.users",
-    # Your stuff: custom apps go here
-    "pi23_gswdt.bank",
-]
-# https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 # MIGRATIONS
 # ------------------------------------------------------------------------------
@@ -134,6 +102,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#middleware
 MIDDLEWARE = [
+    "django_tenants.middleware.main.TenantMainMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -182,6 +151,7 @@ TEMPLATES = [
         "OPTIONS": {
             # https://docs.djangoproject.com/en/dev/ref/settings/#template-context-processors
             "context_processors": [
+                "django.template.context_processors.request",
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
@@ -267,10 +237,13 @@ LOGGING = {
 if USE_TZ:
     # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-timezone
     CELERY_TIMEZONE = TIME_ZONE
+
+REDIS_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/0")
+
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-broker_url
-CELERY_BROKER_URL = env("CELERY_BROKER_URL")
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=REDIS_URL)
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-result_backend
-CELERY_RESULT_BACKEND = "django-db"
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#result-extended
 CELERY_RESULT_EXTENDED = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#result-backend-always-retry
@@ -339,7 +312,6 @@ SPECTACULAR_SETTINGS = {
 }
 # Your stuff...
 # ------------------------------------------------------------------------------
-REDIS_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/0")
 
 CACHES = {
     "default": {
@@ -352,13 +324,117 @@ CACHES = {
 }
 
 CELERY_CACHE_BACKEND = "default"
-CELERY_BEAT_SCHEDULE = {
-    "task__test_celery": {
-        "task": "task__test_celery",
-        "args": (1, 2, 3),
-        "kwargs": {"a": 1, "b": 2, "c": 3},
-        "schedule": crontab(
-            **{"minute": "*/3", "hour": "*", "day_of_week": "*", "day_of_month": "*", "month_of_year": "*"}
-        ),
+# CELERY_BEAT_SCHEDULE = {
+#     "task__test_celery": {
+#         "task": "task__test_celery",
+#         "args": (1, 2, 3),
+#         "kwargs": {"a": 1, "b": 2, "c": 3},
+#         "schedule": crontab(
+#             **{"minute": "*/3", "hour": "*", "day_of_week": "*", "day_of_month": "*", "month_of_year": "*"}
+#         ),
+#     },
+# }
+BASE_URL = env("BASE_URL", default="localhost")
+
+# Django Tenants
+DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
+
+# APPS
+# ------------------------------------------------------------------------------
+PUBLIC_APPS = [
+    "django_tenants",  # mandatory
+    "django.contrib.sites",
+    # "django_celery_beat",
+    # "django_celery_results",
+    # constance should be loaded before project apps - source constance docs
+    "constance",
+    "constance.backends.database",
+    # app where tenant models resides
+    "pi23_gswdt.organisations",
+    "django.contrib.contenttypes",
+    # all other apps
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.admin",
+    "django.forms",
+    "django.contrib.auth",
+    "crispy_forms",
+    "crispy_bootstrap5",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "rest_framework",
+    "rest_framework.authtoken",
+    "corsheaders",
+    "drf_spectacular",
+    "djangoql",
+    "pi23_gswdt.users",
+]
+
+TENANT_APPS = [
+    "django.contrib.sites",
+    # constance should be loaded before project apps - source constance docs
+    "constance",
+    "constance.backends.database",
+    # app where tenant models resides
+    "pi23_gswdt.organisations",
+    "django.contrib.contenttypes",
+    # all other apps
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.admin",
+    "django.forms",
+    "django.contrib.auth",
+    "crispy_forms",
+    "crispy_bootstrap5",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "rest_framework",
+    "rest_framework.authtoken",
+    "corsheaders",
+    "drf_spectacular",
+    "djangoql",
+    "pi23_gswdt.users",
+    "pi23_gswdt.bank",
+]
+
+PUBLIC_TENANT_NAME = "public"
+ORG_TENANT_NAME = "organization"
+
+# https://django-tenants.readthedocs.io/en/latest/use.html#multi-types-tenants
+TENANT_TYPES = {
+    PUBLIC_TENANT_NAME: {
+        "APPS": PUBLIC_APPS,
+        "URLCONF": "config.urls_public",  # url for the public type here
+    },
+    ORG_TENANT_NAME: {
+        "APPS": TENANT_APPS,
+        "URLCONF": "config.urls",
     },
 }
+
+TENANT_URLCONF = TENANT_TYPES[ORG_TENANT_NAME]["URLCONF"]
+SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
+INSTALLED_APPS = []
+for schema in TENANT_TYPES:
+    INSTALLED_APPS += [app for app in TENANT_TYPES[schema]["APPS"] if app not in INSTALLED_APPS]
+
+TENANT_MODEL = "organisations.Organisation"
+TENANT_DOMAIN_MODEL = "organisations.Domain"
+
+HAS_MULTI_TYPE_TENANTS = True
+MULTI_TYPE_DATABASE_FIELD = "tenant_type"
+
+
+# Constance settings
+CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
+CONSTANCE_DATABASE_CACHE_BACKEND = "default"
+
+# tenant-schemas-celery
+# ------------------------------------------------------------------------------
+TASK_TENANT_CACHE_SECONDS = env.int("TASK_TENANT_CACHE_SECONDS", default=60)  # 1 minute

@@ -2,6 +2,7 @@ import random
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django_tenants.utils import get_tenant_model
 
 from pi23_gswdt.bank.models import Account, AccountType, AccountTypeChoices, Customer
 
@@ -22,6 +23,17 @@ def create_superuser():
         print("Created user: ", global_superuser)
     except Exception as excp:
         print(f"Failed to create user, error: [{excp}]")
+
+
+def create_public_tenant():
+    tenant = get_tenant_model()(
+        tenant_type=settings.PUBLIC_TENANT_NAME,
+        schema_name=settings.PUBLIC_TENANT_NAME,
+        name="Jatin Goel's public tenant.",
+        is_enabled=True,
+        in_production=False,
+    )
+    tenant.save()
 
 
 def create_customers():
@@ -87,6 +99,7 @@ def create_accounts():
 
 def run(*args):
     create_superuser()
-    create_customers()
-    create_account_types()
-    create_accounts()
+    create_public_tenant()
+    # create_customers()
+    # create_account_types()
+    # create_accounts()
