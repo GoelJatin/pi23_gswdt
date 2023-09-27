@@ -16,7 +16,9 @@ class Customer(UUIDModel, TimeStampedModel):
 
 
 class AccountType(UUIDModel, TimeStampedModel):
-    account_type = models.CharField(_("Type of Account"), unique=True, choices=AccountTypeChoices.choices)
+    account_type = models.CharField(
+        _("Type of Account"), unique=True, choices=AccountTypeChoices.choices, max_length=30
+    )
     description = models.TextField(blank=True)
 
     def __str__(self):
