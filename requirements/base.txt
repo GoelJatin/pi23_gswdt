@@ -29,5 +29,5 @@ django-redis-task-lock==0.6  # https://github.com/Lenders-Cooperative/django-red
 django-constance==2.9.1  # https://github.com/jazzband/django-constance
 django-constance[database]
 django-tenants==3.5.0  # https://github.com/django-tenants/django-tenants
-tenant-schemas-celery==2.0.0  # https://github.com/maciej-gol/tenant-schemas-celery
+tenant-schemas-celery==2.2.0  # https://github.com/maciej-gol/tenant-schemas-celery
 djangoql==0.17.1  # https://github.com/ivelum/djangoql
