@@ -2,11 +2,13 @@ import random
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django_tenants.utils import get_tenant_model
+from django_tenants.utils import get_public_schema_name, get_tenant_domain_model, get_tenant_model, tenant_context
 
 from pi23_gswdt.bank.models import Account, AccountType, AccountTypeChoices, Customer
 
 User = get_user_model()
+Domain = get_tenant_domain_model()
+Organization = get_tenant_model()
 
 
 def create_superuser():
@@ -26,23 +28,58 @@ def create_superuser():
 
 
 def create_public_tenant():
-    tenant = get_tenant_model()(
+    tenant = Organization(
         tenant_type=settings.PUBLIC_TENANT_NAME,
         schema_name=settings.PUBLIC_TENANT_NAME,
-        name="Jatin Goel's public tenant.",
+        name="Jatin Goel's public tenant",
         is_enabled=True,
         in_production=False,
     )
-    tenant.save()
+    try:
+        tenant.save()
+        with tenant_context(tenant):
+            create_superuser()
+    except Exception as excp:
+        print(f"Failed to create public tenant, error: [{excp}]")
 
 
-def create_customers():
+def create_tenants():
+    for schema_name, tenant_name in [
+        ("pyconindia", "PyCon India"),
+        ("pychandigarh", "PyChandigarh"),
+        ("hydpy", "Hyderabad Python User Group"),
+    ]:
+        tenant = Organization(
+            tenant_type=settings.ORG_TENANT_NAME,
+            schema_name=schema_name,
+            name=tenant_name,
+            is_enabled=True,
+            in_production=False,
+        )
+        try:
+            tenant.save()
+
+            Domain.objects.get_or_create(
+                domain=Domain.standard_domain_from_schema_name(tenant.schema_name),
+                tenant=tenant,
+                is_primary=True,
+            )
+
+            with tenant_context(tenant):
+                create_customers(tenant.schema_name)
+                create_account_types()
+                create_accounts()
+        except Exception as excp:
+            print(f"Failed to create public tenant, error: [{excp}]")
+
+
+def create_customers(schema_name):
     customers = [
-        {"cust_id": 123456781, "name": "Jatin 1", "email": "jatin@1.com"},
-        {"cust_id": 123456782, "name": "Jatin 2", "email": "jatin@2.com"},
-        {"cust_id": 123456783, "name": "Jatin 3", "email": "jatin@3.com"},
-        {"cust_id": 123456784, "name": "Jatin 4", "email": "jatin@4.com"},
-        {"cust_id": 123456785, "name": "Jatin 5", "email": "jatin@5.com"},
+        {"cust_id": 123456781, "name": "Jatin 1", "email": f"jatin@{schema_name}.com"},
+        {"cust_id": 123456782, "name": "Jatin 2", "email": f"jatin@{schema_name}.com"},
+        {"cust_id": 123456783, "name": "Jatin 3", "email": f"jatin@{schema_name}.com"},
+        {"cust_id": 123456784, "name": "Jatin 4", "email": f"jatin@{schema_name}.com"},
+        {"cust_id": 123456785, "name": "Jatin 5", "email": f"jatin@{schema_name}.com"},
     ]
 
     obj_set = []
@@ -100,6 +137,4 @@ def create_accounts():
 def run(*args):
     create_superuser()
     create_public_tenant()
-    # create_customers()
-    # create_account_types()
-    # create_accounts()
+    create_tenants()

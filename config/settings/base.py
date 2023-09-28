@@ -324,16 +324,16 @@ CACHES = {
 }
 
 CELERY_CACHE_BACKEND = "default"
-# CELERY_BEAT_SCHEDULE = {
-#     "task__test_celery": {
-#         "task": "task__test_celery",
-#         "args": (1, 2, 3),
-#         "kwargs": {"a": 1, "b": 2, "c": 3},
-#         "schedule": crontab(
-#             **{"minute": "*/3", "hour": "*", "day_of_week": "*", "day_of_month": "*", "month_of_year": "*"}
-#         ),
-#     },
-# }
+CELERY_BEAT_SCHEDULE = {
+    "task__test_celery": {
+        "task": "task__test_celery",
+        "args": (1, 2, 3),
+        "kwargs": {"a": 1, "b": 2, "c": 3},
+        "schedule": crontab(
+            **{"minute": "*/3", "hour": "*", "day_of_week": "*", "day_of_month": "*", "month_of_year": "*"}
+        ),
+    },
+}
 BASE_URL = env("BASE_URL", default="localhost")
 
 # Django Tenants
@@ -344,8 +344,8 @@ DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 PUBLIC_APPS = [
     "django_tenants",  # mandatory
     "django.contrib.sites",
-    # "django_celery_beat",
-    # "django_celery_results",
+    "django_celery_beat",
+    "django_celery_results",
     # constance should be loaded before project apps - source constance docs
     "constance",
     "constance.backends.database",
