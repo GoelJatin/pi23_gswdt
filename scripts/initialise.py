@@ -66,6 +66,7 @@ def create_tenants():
             )
 
             with tenant_context(tenant):
+                create_superuser()
                 create_customers(tenant.schema_name)
                 create_account_types()
                 create_accounts()

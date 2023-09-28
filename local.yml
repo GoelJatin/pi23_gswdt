@@ -60,8 +60,8 @@ services:
     image: pi23_gswdt_local_celeryworker
     container_name: pi23_gswdt_local_celeryworker
     depends_on:
-      - redis
-      - postgres
+      django:
+        condition: service_started
     ports: []
     command: /start-celeryworker
 
@@ -70,8 +70,8 @@ services:
     image: pi23_gswdt_local_celerybeat
     container_name: pi23_gswdt_local_celerybeat
     depends_on:
-      - redis
-      - postgres
+      django:
+        condition: service_started
     ports: []
     command: /start-celerybeat
 
